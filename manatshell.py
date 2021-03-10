@@ -4,184 +4,172 @@ import shlex
 import glob
 #import Popen
 
-class Job():
+class Job:
     def __init__(self, process, type):
+        self.test = 1
         self.process = process
         self.pid = process.pid
         self.status = process.poll
-        self.children = []
+        #self.children = []
         self.type = type
-    def add_child(self,child_process):
-        self.children.append(child_process)
+#    def add_child(self,child_job):
+    #    self.children.append(child_job)
+    def type():
+        return "THIS IS A JOB OBJECT"
 
-
-'''
-class jobs:
-    def __init__(self, process, children):
-        self.pid = process.pid
-        self.status = process.status
-        print(self.pid)
-        print(self.status)
-    def addNode(self,obj):
-        self.children.append(obj)
-'''
+#what do you do if parent process finishes before the child process?
+def clean_processes(running_processes):
+    print(running_processes)
+    #processes_to_remove = []
+    for job in running_processes:
+        for child_process in job.children:
+            if job_children.process.poll != None:
+                running_processes[job].remove(job_children.pid)
+        if job.process.poll != None:
+            print("FOUND FINISHED JOB")
+            running_processes.remove(job)
 
 
 def execute(command, processes):
+    input_redirection = None
+    output_redirection = None
+    piping = False
+
+    #clean_processes(processes)
     command_tokens = split_line(command)
     if "|" in command_tokens:
-        pass
+        piping = True
+        commands_to_pipe = []
+        command_tokens_copy = [x for x in command_tokens]
+        print("COPY IS", command_tokens_copy)
+        while "|" in command_tokens_copy:
+            #print ("IN HERE")
+            print("UPDATED COPY IS", command_tokens_copy)
+            commands_to_pipe.append(command_tokens_copy[0:command_tokens_copy.index("|")])
+            command_tokens_copy = command_tokens_copy[command_tokens_copy.index("|")+1:]
+        commands_to_pipe.append([command_tokens_copy[0]])
+        print(commands_to_pipe)
+        #subfile for each of the things you want do
+
     if "<" in command_tokens:
+        print("in the <")
+        print(command_tokens)
         #look at all the fields associated. stdin and sdout.
-        index_value = command.index("<")
-        #file_name = command[in]
-        for i in range(0,len(command_tokens)):
-            if command_tokens[i] == "<":
-                index_value = i
-    filename = "test"
-    try:
-        open(file_name, 'r')
-    except:
-        "NOT FOUND"
+        index_value = command_tokens.index("<")
+        filename = command_tokens[index_value+1]
+        command = command_tokens[0:index_value]
+        print("COMMAND IS", command)
+        print("FILE IS", filename)
+        try:
+            input_redirection = open(filename, "r")
 
+        except:
+            print("File was not successfully created")
+            #continue
 
-    print(command_tokens)
-    #if command_tokens[0] == "ls":
-        #print(os.listdir())
+    if ">" in command_tokens:
+        print("in the >")
+        print(command_tokens)
+        #look at all the fields associated. stdin and sdout.
+        index_value = command_tokens.index(">")
+        print(index_value)
+        filename = command_tokens[index_value+1]
+        command = command_tokens[0:index_value]
+        print("COMMAND IS", command)
+        print("FILE IS", filename)
+        try:
+            output_redirection = open(filename, "w")
+
+        except:
+            print("File was not successfully created")
+            #continue
+
+        '''
+        index_value = command.index(">")
+        file = command_tokens[2]
+        command = command[0]
+        try:
+            output_redirection = open(file, 'r')
+        except:
+            print("File was not found")
+            #continue
+        '''
+
     if command_tokens[0] == "pwd":
         print(os.getcwd())
+
     if command_tokens[0] == "cd":
+        print("PATH IS", (command_tokens[len(command_tokens)-1]))
         try:
             os.chdir(command_tokens[1])
             print(os.getcwd())
         except:
             print("please enter a valid path for where to go")
+
     if command_tokens[0] == "bg":
         pid = command_tokens[1]
-        for value in processes:
-            print("THE VALUE IS", value)
-            if value == pid:
-                subprocess[pid].send_signal[signal.SIGCONT]
-                print("signal sent")
-                #job.process.wait()
+        print(pid)
+        for job in processes:
+            if job.pid == pid:
+                job.process.send_signal(signal.SIGSTOP)
+                print("stop signal sent")
+                job.process.send_signal(signal.SIGCONT)
 
-    '''
-    if command_tokens[0] == "fg":
-        pid = command_tokens[1]
-        for node in tree:
-            if node.pid == pid:
-                node.send_signal(signal.SIGCONT)
-                sbp = subprocess.Popen(command_tokens[0], command_tokens[1])
-                node.append(sbp)
-                #figure out how to do the background vs. foreground stuff
-    '''
     if command_tokens[0] == "jobs":
         #print(processes)
-        #I don't think that this is going to work for a nested tree.. like if a subprocess launches a subprocess
-        #Keep track of the running processes in some way - every time you launch a new process, add it to a list of running process. Every time
-        #the process finishes, remove from the list of running processes. In a way that lets you visualize.
-        for node in processes:
-            print("PARENT:", processes[node].pid)
-            #for i in processes[node].children:
-                #print(i)
-            for i in processes[node].children:
-                if i.type == "background":
-                    print("CHILDREN:", i.pid)
-                else:
-                    print("FOREGROUND JOB", i.pid)
+        for job in processes:
+            if job.type == "background":
+                print(job.pid)
 
-            #print(processes[node].children.pid)
-            #print(children)
     if command_tokens[0] == "fg":
-        print("HERE")
         try:
             pid = command_tokens[1]
             print(pid)
-            for value in processes:
-                print("THE VALUE IS", value)
-                if value == pid:
-                    subprocess[pid].send_signal[signal.SIGCONT]
-                    print("signal sent")
+            for job in processes:
+                if job.pid == pid:
+                    job.process.send_signal(signal.SIGCONT)
+                    print("continue signal sent")
                     job.process.wait()
             #how do you run in the foreground, make it p.wait()?
         except:
             "please enter valid arguments"
 
     else:
-        type = "background"
-        sbp = subprocess.Popen(command_tokens)
+        type = "foreground"
         if "&" in command_tokens:
-            type = "foreground"
-        job = Job(sbp,type)
-        current_pid = os.getpid()
-        print(current_pid)
-        if current_pid in processes:
-            print("exists")
-            processes[current_pid].add_child(job)
-        else:
-            #print("does not exist")
-            processes[current_pid] = job
-        #print(processes)
-    #    print(processes[current_pid].children)
+            type = "background"
+        sbp = subprocess.Popen(command_tokens, stdin=input_redirection, stdout=output_redirection)
+        child_job = Job(sbp,type)
+        #current_pid = os.getpid()
+        #print(current_pid)
+        processes.append(child_job)
+        if type == "foreground":
+            sbp.wait()
 
+        '''
+            if job.pid == current_pid:
+                processes[current_pid].add_child(child_job)
+                added = True
+        if added == False:
+            parent_job = Job(sbp,type)
+            processes.append(parent_job)
+        '''
+        #print(processes[0])
+        #print(processes[0].pid)
+        #print(processes[0].test)
+            #processes[current_pid] = child_job
     #include a clean which looks through the processes and see if the job is complete, then remove. Kill the node and remove from the tree.
 
     return processes
 
-    '''
-
-        #print(tree)
-        if tree.root == None:
-            #just start with an empty list
-            #os.something gets you the process ID
-
-            #print(tree.root, ": TREE ROOT")
-            job1 = Job(sbp)
-            tree = Tree(job1)
-            print("Tree root is", tree.root)
-
-        else:
-            print("In the else")
-            job = Job(sbp)
-            tree.add_child(job)
-            for i in tree.children:
-                print(i)
-
-    return tree
-
-    '''
-
-    '''
-    running_processes = []
-    #running_processes.append()
-    command_tokens = split_line(command)
-    if command_tokens[0] == "ls" or command_tokens[0] == "pwd":
-        process = job(subprocess.Popen(command_tokens))
-        if job_tree.root == None:
-            job_tree.root =
-        print(process.children)
-        print(process.status)
-    '''
-
-
-
-
-
-
 def split_line(command):
-    #lexixng - breaking line of input into separate tokens - this all we are focusing on
-    #parsing - taking tokens and building an abstract syntax string - classic compiler has to do both
-    # shlex module will definitely help
-    #how to handle the backslash escaping
     return(shlex.split(command))
 
 
 def main():
-    #job_tree = Tree(None)
-    #print("HERE")
-    processes = dict()
+    running_processes = []
+
     while True:
-        #print(job_tree == None)
         command = input("$ ")
         if command == "exit":
             print("Exiting shell")
@@ -189,8 +177,12 @@ def main():
         elif command == "help":
             print("Manat's shell. A basic Python shell")
         else:
-            #split_line(command)
-            processes = execute(command, processes)
+            running_processes = execute(command, running_processes)
+
+#what is going on with type/attribute not found?
+#how to handle the piping and the subcommands?
+#where do I even do the globbing?
+#thoughts on how to build the automated testing system?
 
 if '__main__' == __name__:
     main()
