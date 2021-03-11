@@ -2,7 +2,6 @@ import os
 import subprocess
 import shlex
 import glob
-#import Popen
 
 class Job:
     def __init__(self, process, type):
@@ -32,37 +31,43 @@ def launch_sbp(command_tokens, processes, input_redirection, output_redirection)
     if type == "foreground":
         sbp.wait()
 
-def launch_piping(split_commands_to_pipe, processes):
+def launch_piping(split_commands_to_pipe, processes,input_redirection,output_redirection):
     type = "foreground"
     if "&" in split_commands_to_pipe:
         type = "background"
+    first_sbp = subprocess.Popen(split_commands_to_pipe[0], stdout=subprocess.PIPE)
+    first_job = Job(first_sbp, type)
+    processes.append(first_job)
+    parent = first_sbp
 
-    '''
-    s_in, s_out = (0, 0)
-    s_in = os.dup(0)
-    s_out = os.dup(1)
+    for i in range(1,len(split_commands_to_pipe)-1):
+        middle_process = subprocess.Popen(split_commands_to_pipe[i], stdin=parent.stdout, stdout=subprocess.pipe)
+        job = Job(middle_process, type)
+        processes.append(job)
+        parent = middle_process
 
-    fdin = os.dup(s_in)
-    '''
+    #out = sbp.stdout
+    last_subprocess = subprocess.Popen(split_commands_to_pipe[-1], stdin=parent.stdout)
+    last_job = Job(last_subprocess, type)
 
-    #print(split_commands_to_pipe[0])
-    #sbp = subprocess.Popen(split_commands_to_pipe[0], stdin=subprocess.stdout, stdout=subprocess.PIPE)
+    processes.append(last_job)
 
-    for i in range(0, len(split_commands_to_pipe)):
-        print("EXECUTING", split_commands_to_pipe[i])
-        sbp = subprocess.Popen(split_commands_to_pipe[i], stdin=out, stdout=sbp.PIPE)
-        child_job = Job(sbp,type)
-        out = sbp.stdout
 
-    processes.append(child_job)
     print("AFTER PIPING PROCESSes ", processes)
     return processes
 
 def execute(command, processes):
+    #if it contains any wild card characteres, it goes and looks at all the files in the current directory
+    #which could match the glob, and copies and pastes them in
+    #for name in glob.glob(command):
+        #print("")
+    #print(glob.glob(command))
     input_redirection = None
     output_redirection = None
     piping = False
 
+    #preprocessing - see subcommand, laucnh suboricess. Modify command tokens
+    #nested subcommands
     clean_processes(processes)
     command_tokens = split_line(command)
     if "|" in command_tokens:
@@ -163,12 +168,15 @@ def execute(command, processes):
             "please enter valid arguments"
     else:
         if piping == True:
-            processes = launch_piping(split_commands_to_pipe, processes)
+            processes = launch_piping(split_commands_to_pipe, processes, input_redirection, output_redirection)
 
         else:
             type = "foreground"
             if "&" in command_tokens:
                 type = "background"
+                index = command_tokens.index("&")
+                command_tokens.remove(command_tokens[index])
+                print("JOB WILL BE BACKGROUND JOB")
             sbp = subprocess.Popen(command_tokens, stdin=input_redirection, stdout=output_redirection)
             child_job = Job(sbp,type)
             #current_pid = os.getpid()
@@ -218,19 +226,25 @@ def execute(command, processes):
 def split_line(command):
     return(shlex.split(command))
 
+def glob(pathname):
+    pass
+
 
 def main():
     running_processes = []
 
     while True:
         command = input("$ ")
-        if command == "exit":
-            print("Exiting shell")
-            break
-        elif command == "help":
-            print("Manat's shell. A basic Python shell")
-        else:
-            running_processes = execute(command, running_processes)
+        try:
+            if command == "exit":
+                print("Exiting shell")
+                break
+            elif command == "help":
+                print("Manat's shell. A basic Python shell")
+            else:
+                running_processes = execute(command, running_processes)
+        except KeyboardInterrupt:
+            print("DID TEH CONTROL THINGS")
 
 #what is going on with type/attribute not found?
 #how to handle the piping and the subcommands?
