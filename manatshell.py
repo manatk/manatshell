@@ -41,7 +41,7 @@ def launch_piping(split_commands_to_pipe, processes,input_redirection,output_red
     parent = first_sbp
 
     for i in range(1,len(split_commands_to_pipe)-1):
-        middle_process = subprocess.Popen(split_commands_to_pipe[i], stdin=parent.stdout, stdout=subprocess.pipe)
+        middle_process = subprocess.Popen(split_commands_to_pipe[i], stdin=parent.stdout, stdout=subprocess.PIPE)
         job = Job(middle_process, type)
         processes.append(job)
         parent = middle_process
@@ -53,18 +53,75 @@ def launch_piping(split_commands_to_pipe, processes,input_redirection,output_red
     processes.append(last_job)
 
 
-    print("AFTER PIPING PROCESSes ", processes)
+    #print("AFTER PIPING PROCESSes ", processes)
     return processes
+
+def subcommand(command, processes):
+    command = command.replace(')', (''))
+    #if command.find('$') > 0:
+        #print("THERE IS A ODLLAR SIGN")
+    command = command.replace('$', (''))
+    command_tokens_split = command.split('(')
+
+    for command in command_tokens_split[::-1]:
+        execute(command, processes)
+
+
+    print(command_tokens_split)
+    #command_tokens = split_line(command)
+    #print("CT IS,", command_tokens)
+    #print("CT 1 is", command_tokens[1])
+    #execute(command_tokens[1], processes)
+    '''
+    print(command_tokens)
+    for i in command_tokens:
+        print(i)
+        if i.find(')') >= 0:
+            print("HERE")
+            i = i.split(0, i.find(')'))
+    print(command_tokens)
+    '''
+
+    #os.system(command)
+    #command_tokens = split_line(command)
+    #print(command_tokens)
+    #execute(command_tokens[1], processes)
+
+    '''
+    print("")
+    command = command.replace('(','')
+    command = command.replace(')','')
+    print("UPDATED COMMAND", command)
+    os.system(command)
+    #command_tokens_1 = split_line(command)
+    #command_tokens_2 = command.split('(')
+    #print(command_tokens_1)
+    #print(command_tokens_2)
+    '''
+    '''
+    for i in command_tokens:
+        if i.index(')') != -1:
+            i = i.split(0, i.index(')'))
+    print(command_tokens)
+
+    os.system(command)
+    #command_tokens = split_line(command)
+    #print(command_tokens)
+    #execute(command_tokens[1], processes)
+    '''
 
 def execute(command, processes):
     #if it contains any wild card characteres, it goes and looks at all the files in the current directory
     #which could match the glob, and copies and pastes them in
+    #goes through and replaces every instance of *.txt with a.txt, b.txt, etc.
+    #not modifying the whole command, just the filename. Anywhere you see the .txt or the ~txt, that is what gets replaced
     #for name in glob.glob(command):
         #print("")
     #print(glob.glob(command))
     input_redirection = None
     output_redirection = None
     piping = False
+    subcommands = False
 
     #preprocessing - see subcommand, laucnh suboricess. Modify command tokens
     #nested subcommands
@@ -128,6 +185,9 @@ def execute(command, processes):
             print("File was not successfully created")
             #continue
 
+    if ("($") in command:
+        subcommand(command, processes)
+
     elif command_tokens[0] == "pwd":
         print(os.getcwd())
 
@@ -184,42 +244,6 @@ def execute(command, processes):
             processes.append(child_job)
             if type == "foreground":
                 sbp.wait()
-
-            #processes = launch_sbp(command_tokens,processes, input_redirection, output_redirection)
-
-        '''
-        type = "foreground"
-        if "&" in command_tokens:
-            type = "background"
-
-        if piping == True:
-            print(split_commands_to_pipe[0])
-            sbp = subprocess.Popen(split_commands_to_pipe[i], stdin=sbp.stdout, stdout=sbp.PIPE)
-
-            for i in range(0, len(split_commands_to_pipe)):
-                old_process = process
-                sbp = subprocess.Popen(split_commands_to_pipe[i], stdin=sbp.stdout, stdout=sbp.PIPE)
-                child_job = Job(sbp,type)
-                out = process.stdout
-
-
-                processes.append(child_job)
-
-
-
-            #print("OD", sbp.output_redirection)
-            output_redirection = sbp.stdout
-            print("OD", output_redirection)
-
-        else:
-            sbp = subprocess.Popen(split_commands_to_pipe[0], stdin=input_redirection, stdout=output_redirection)
-        child_job = Job(sbp,type)
-        #current_pid = os.getpid()
-        #print(current_pid)
-        processes.append(child_job)
-        if type == "foreground":
-            sbp.wait()
-        '''
 
     return processes
 
