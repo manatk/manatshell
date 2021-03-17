@@ -56,8 +56,6 @@ def subcommand(command, processes):
 #execute built-in commands and launch subprocesses for the non-built-in commands
 def execute(command, processes):
     command_tokens = split_line(command)
-    #while command_tokens.count('?') > -1 or command_tokens.count('*') > -1:
-    #while ('?') in command_tokens or ('*') in command_tokens:
     command_updated = str(command)
     updated_command_tokens = copy.deepcopy(command_tokens)
     for i in range (0, len(command_tokens)):
@@ -70,10 +68,11 @@ def execute(command, processes):
     output_redirection = None
     piping = False
     subcommands = False
-
     clean_processes(processes)
+
     #check if there is piping
-    if "|" in command_tokens:
+    if "|" in command:
+        piping = True
         commands_to_pipe = (command.split("|"))
         split_commands_to_pipe = []
         for i in range(0,len(commands_to_pipe)):
@@ -145,15 +144,16 @@ def execute(command, processes):
             pid = command_tokens[1]
             for job in processes:
                 if job.pid == pid:
-                    print(job.pid)
+                    #print(job.pid)
                     job.process.send_signal(signal.SIGCONT)
-                    print("SIGNAL SENT")
+                    #print("SIGNAL SENT")
                     job.process.wait()
         except:
             print("please enter valid arguments")
 
     else:
         if piping == True:
+            print("HERE")
             processes = launch_piping(split_commands_to_pipe, processes, input_redirection, output_redirection)
 
         else:
