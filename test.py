@@ -3,21 +3,20 @@ import subprocess
 import shlex
 import glob as Glob
 import signal
-import copy
 
 #Job class is an extension of the subprocess module. Keeps track of different processes + more information
 class Job:
     def __init__(self, process, type):
         self.process = process
         self.pid = process.pid
-        self.status = process.poll()
+        self.status = process.poll
         self.type = type
 
 #remove any processes which are no longer running. My processes list keeps track of only active jobs
 def clean_processes(running_processes):
     try:
         for job in running_processes:
-            if job.process.poll() != None:
+            if job.process.poll != None:
                 running_processes.remove(job)
     except:
         print("ERROR WITH CLEANING")
@@ -59,13 +58,16 @@ def execute(command, processes):
     #while command_tokens.count('?') > -1 or command_tokens.count('*') > -1:
     #while ('?') in command_tokens or ('*') in command_tokens:
     command_updated = str(command)
-    updated_command_tokens = copy.deepcopy(command_tokens)
+    #while command_updated.find('?') > -1 or command_updated.find('*') > -1:
+        #print("HERE")
     for i in range (0, len(command_tokens)):
         if command_tokens[i].find('?') > -1 or command_tokens[i].find('*') > -1:
-            updated_command_tokens.extend(Glob.glob(command_tokens[i]))
-            updated_command_tokens.remove(command_tokens[i])
-    command_tokens = updated_command_tokens
+            command_tokens.extend(Glob.glob(command_tokens[i]))
+            command_tokens.remove(command_tokens[i])
+    print (command_tokens)
+        #print(command.find('?'), command.find('*'))
 
+    print(command_tokens)
     input_redirection = None
     output_redirection = None
     piping = False
@@ -121,33 +123,26 @@ def execute(command, processes):
             print("please enter a valid path for where to go")
 
     elif command_tokens[0] == "bg":
-        print("HERE")
         try:
             pid = command_tokens[1]
             for job in processes:
-                print(job.pid)
                 if job.pid == pid:
                     job.process.send_signal(signal.SIGSTOP)
-                    print("SENT STOP SIGNAL")
                     job.process.send_signal(signal.SIGCONT)
         except:
             print("please enter valid arguments")
 
     elif command_tokens[0] == "jobs":
-        print(processes)
         for job in processes:
             if job.type == "background":
                 print(job.pid)
 
     elif command_tokens[0] == "fg":
-        print("FG")
         try:
             pid = command_tokens[1]
             for job in processes:
                 if job.pid == pid:
-                    print(job.pid)
                     job.process.send_signal(signal.SIGCONT)
-                    print("SIGNAL SENT")
                     job.process.wait()
         except:
             print("please enter valid arguments")
@@ -158,7 +153,6 @@ def execute(command, processes):
 
         else:
             type = "foreground"
-            print(command_tokens)
             if "&" in command_tokens:
                 type = "background"
                 index = command_tokens.index("&")
@@ -166,7 +160,6 @@ def execute(command, processes):
                 print("JOB WILL BE BACKGROUND JOB")
             sbp = subprocess.Popen(command_tokens, stdin=input_redirection, stdout=output_redirection)
             child_job = Job(sbp,type)
-            print(child_job.pid)
             processes.append(child_job)
             if type == "foreground":
                 sbp.wait()
@@ -184,6 +177,7 @@ def main():
             command = input("$ ")
             history.write(command)
             history.write("\n")
+            #history.write('/n')
             if command == "exit":
                 print("Exiting shell")
                 break
