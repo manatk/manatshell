@@ -188,7 +188,7 @@ def main():
                 print("Exiting shell")
                 break
             elif command == "help":
-                print("Manat's shell. A basic Python shell")
+                print("Manat's shell. A basic Python shell. Doesn't support nested subcommands")
             else:
                 running_processes = execute(command, running_processes)
         except KeyboardInterrupt:
