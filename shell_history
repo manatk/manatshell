@@ -1,0 +1,14 @@
+ps -ax | grep bash
+ls
+ls -l > hello.txt
+ls -l > lolol.txt
+grep bash < ps -ax
+ps -ax
+grep bash < lolol.txt
+grep bash
+git add manatshell.py
+git commit - "final"
+git commit -m "final"
+git push origin master
+git push origin master
+exit
