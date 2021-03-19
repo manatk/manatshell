@@ -125,7 +125,7 @@ def execute(command, processes):
             pid = command_tokens[1]
             for job in processes:
                 print(job.pid)
-                if job.pid == pid:
+                if job.pid == int(pid):
                     job.process.send_signal(signal.SIGSTOP)
                     print("SENT STOP SIGNAL")
                     job.process.send_signal(signal.SIGCONT)
@@ -143,11 +143,12 @@ def execute(command, processes):
         try:
             pid = command_tokens[1]
             for job in processes:
-                if job.pid == pid:
+                if job.pid == int(pid):
                     #print(job.pid)
                     job.process.send_signal(signal.SIGCONT)
                     #print("SIGNAL SENT")
                     job.process.wait()
+                    print("successfully waited")
         except:
             print("please enter valid arguments")
 
@@ -175,9 +176,16 @@ def execute(command, processes):
 def split_line(command):
     return(shlex.split(command))
 
+def handler(signum, frame):
+    print("GETTING HERE")
+    print('Signal handler called with signal', signum)
+    raise OSError("Couldn't open device!")
+
 def main():
     running_processes = []
     history = open("shell_history", "w")
+
+    #signal.signal(signal.SIGSTOP, handler)
 
     while True:
         try:
